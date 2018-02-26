@@ -2,61 +2,52 @@ package com.google.appengine.demo.androidclient;
 
 import static android.view.inputmethod.EditorInfo.IME_ACTION_DONE;
 import static android.view.inputmethod.EditorInfo.IME_ACTION_UNSPECIFIED;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.widget.EditText;
 import android.widget.TextView;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.net.URL;
+
+import com.google.appengine.demo.androidclient.lookup.AsyncTaskLookup;
+import com.google.appengine.demo.androidclient.lookup.JDeferredLookup;
+
+import org.jdeferred.Promise;
 
 public class JavaHelloWorldActivity extends AppCompatActivity {
-  @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_hello_world);
-    EditText nameInput = (EditText) findViewById(R.id.nameInput);
-    nameInput.setOnEditorActionListener(
-        (textView, actionId, keyEvent) -> {
-          if (actionId == IME_ACTION_DONE || actionId == IME_ACTION_UNSPECIFIED) {
-            new LookUpName().execute(textView.getText().toString());
-            return true;
-          } else {
-            return false;
-          }
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_hello_world);
+        EditText nameInput = (EditText) findViewById(R.id.nameInput);
+        nameInput.setText("Java Hello World");
+
+        nameInput.setOnEditorActionListener(
+                (textView, actionId, keyEvent) -> {
+                    if (actionId == IME_ACTION_DONE || actionId == IME_ACTION_UNSPECIFIED) {
+                        //this.callAsyncTaskLookup(textView);
+                        this.callJDeferredTaskLookup(textView.getText().toString());
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
+    }
+
+    public void callAsyncTaskLookup(String name) {
+        AsyncTaskLookup asyncTaskLookup = new AsyncTaskLookup((TextView) findViewById(R.id.resultView));
+        asyncTaskLookup.execute(name);
+    }
+
+    public void callJDeferredTaskLookup(String name) {
+        JDeferredLookup lookup = new JDeferredLookup();
+        Promise<String, Throwable, Void> promise = lookup.lookup(name);
+        promise.done((result) -> {
+            TextView resultView = (TextView) findViewById(R.id.resultView);
+            resultView.setText(result);
+        }).fail((t) -> {
+            Log.e("HELLO", "failed to call lookup", t);
         });
-  }
-
-  private class LookUpName extends AsyncTask<String, Void, String> {
-    private final TextView resultView = (TextView) findViewById(R.id.resultView);
-
-    @Override protected void onPreExecute() {
-      resultView.setText("");
     }
-
-    @Override protected String doInBackground(String... strings) {
-      try {
-        URL url = new URL("http://kotlin-java8.appspot.com/lookup?name=" + strings[0]);
-        byte[] bytes;
-        try (ByteArrayOutputStream bout = new ByteArrayOutputStream();
-             InputStream in = url.openStream()) {
-          int b;
-          while ((b = in.read()) >= 0) {
-            bout.write(b);
-          }
-          bytes = bout.toByteArray();
-        }
-        return "Java: " + new String(bytes, UTF_8);
-      } catch (Exception e) {
-        return e.toString();
-      }
-    }
-
-    @Override protected void onPostExecute(String s) {
-      resultView.setText(s);
-    }
-  }
 }

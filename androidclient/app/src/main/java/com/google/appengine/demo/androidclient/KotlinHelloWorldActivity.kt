@@ -9,7 +9,7 @@ import kotlinx.android.synthetic.main.activity_hello_world.nameInput
 import kotlinx.android.synthetic.main.activity_hello_world.resultView
 import java.net.URL
 
-class HelloWorldActivity : AppCompatActivity() {
+class KotlinHelloWorldActivity : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_hello_world)
